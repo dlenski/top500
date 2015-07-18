@@ -1,0 +1,4 @@
+*.py[co]
+TOP500_*.xls
+TOP500_history.csv
+TOP500.ini
