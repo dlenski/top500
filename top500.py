@@ -42,9 +42,9 @@ for year, month in it.takewhile( lambda x:x<=(now.year,now.month), it.izip(it.co
     xls_files.append((year,month,fn))
 
 # First pass, figure out all the headers
-all_headers = ['Year', 'Month']
+all_headers = ['Year', 'Month', 'Day']
 last_headers = []
-rename_headers = {'Rmax':'RMax', 'Rpeak':'RPeak', 'Effeciency (%)':'Efficiency (%)','Proc. Frequency':'Processor Speed (MHz)','Cores':'Total Cores'}
+headers_to_rename = {'Rmax':'RMax', 'Rpeak':'RPeak', 'Effeciency (%)':'Efficiency (%)','Proc. Frequency':'Processor Speed (MHz)','Cores':'Total Cores'}
 
 for (year, month, fn) in xls_files:
     w = xlrd.open_workbook(fn, logfile=open(os.devnull, 'w'))
@@ -52,12 +52,16 @@ for (year, month, fn) in xls_files:
         for rr in range(s.nrows):
             r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
             if any(r): #skip blank rows
-                headers = [rename_headers.get(h,h) for h in r]
+                renamed_headers = {}
+                headers = [(renamed_headers.setdefault(h, headers_to_rename[h]) if h in headers_to_rename else h)
+                           for h in r]
                 new_headers = [h for h in headers if h not in all_headers]
                 drop_headers = [h for h in last_headers if h not in headers]
 
-                if new_headers or drop_headers:
+                if new_headers or drop_headers or renamed_headers:
                     print "{}/{}:".format(year,month)
+                    if renamed_headers:
+                        print textwrap.fill("renamed headers: " + ', '.join('%s to %s'%kv for kv in renamed_headers.items()), initial_indent='  ', subsequent_indent='    ')
                     if new_headers:
                         print textwrap.fill("new headers: " + ', '.join(new_headers), initial_indent='  ', subsequent_indent='    ')
                     if drop_headers:
@@ -79,9 +83,8 @@ for (year,month,fn) in xls_files:
             r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
             if any(r): #skip blank lines
                 if headers is None:
-                    headers = [rename_headers.get(h,h) for h in r]
+                    headers = [headers_to_rename.get(h,h) for h in r]
                 else:
                     rd = dict(zip(headers, r))
-                    rd['Year'] = year
-                    rd['Month'] = month
+                    rd.update({'Year':year, 'Month':month, 'Day':1})
                     out.writerow(rd)
