@@ -73,6 +73,11 @@ for pos, cbd in enumerate(major_minor_countries):
         hatch = hatches.next()
         facecolor = colors.next()
 
+        if bottom is None:
+            bottom = max(0, ser.min() - 0.1*ser.ptp())
+            edge = bottom
+            ser -= bottom
+
         ax.fill_between(dates, edge, edge+ser, edgecolor='k', facecolor=facecolor, hatch=hatch, label=pp)
         ax.xaxis.set_major_formatter(mpld.DateFormatter("’%y"))
         ax.xaxis.set_major_locator(mpld.YearLocator())
@@ -83,8 +88,6 @@ for pos, cbd in enumerate(major_minor_countries):
 
         edge += ser
         pplast = pp
-        if bottom is None:
-            bottom = max(0, edge.min() - 0.1*edge.ptp())
 
     # show legend and labels
     plt.ylabel("Number of systems")
@@ -99,6 +102,8 @@ for pos, cbd in enumerate(major_minor_countries):
 plt.legend(patches, labels, loc='upper left', bbox_to_anchor=(1.02, 1), handleheight=1.2, handlelength=3, ncol=2)
 plt.subplots_adjust(left=.08, top=.92, bottom=0.12, right=0.6, hspace=0.02)
 plt.xlim(dates.min(), dates.max())
+plt.savefig("Countries_with_TOP500_supercomputers.png", bbox_inches='tight')
+plt.savefig("Countries_with_TOP500_supercomputers.svg", bbox_inches='tight')
 
 ##########################
 
@@ -153,4 +158,6 @@ plt.title("TOP500 Supercomputers by Processor Family")
 plt.xlim(dates.min(), dates.max())#+pd.datetools.relativedelta(months=6))
 plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
 
+plt.savefig("Processor_families_in_TOP500_supercomputers.png", bbox_inches='tight')
+plt.savefig("Processor_families_in_TOP500_supercomputers.svg", bbox_inches='tight')
 plt.show()
