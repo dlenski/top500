@@ -1,0 +1,22 @@
+{
+	"fr": {
+		"nsys": "Nombre de systèmes",
+		"by_procfam": "Superordinateurs TOP500 par famille de processeur",
+		"by_country": "Superordinateurs TOP500 par pays",
+		"date": "Date de la liste TOP500"
+	},
+
+	"en": {
+		"nsys": "Number of systems",
+		"by_procfam": "TOP500 Supercomputers by Processor Family",
+		"by_country": "TOP500 Supercomputers by Country",
+		"date": "TOP500 Date"
+	},
+
+	"es": {
+		"nsys": "Número de sistemas",
+		"by_procfam": "Supercomputadoras de TOP500 por familia de procesora",
+		"by_country": "Supercomputadoras de TOP500 por país",
+		"date": "Fecha de la lista TOP500"
+	}
+}

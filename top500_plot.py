@@ -1,7 +1,7 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, json
 from itertools import cycle, product
 import pandas as pd
 import numpy as np
@@ -18,15 +18,12 @@ colors = cycle( list('bcgmry') )
                 #   'aqua', 'silver', 'tan', 'tomato', 'steelblue', 'lightcoral', 'chocolate', 'fuchsia', 'indianred'])
 hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
 
-input, only_these = sys.argv[1], sys.argv[2:]
-
 ##########################
 
 # get the data
-df = pd.read_csv(input, low_memory=False, parse_dates={'Date': ['Year','Month','Day']})
+df = pd.read_csv('TOP500_history.csv', low_memory=False, parse_dates={'Date': ['Year','Month','Day']})
 
 # Make mostly-coherent processor family and vendor columns
-df['Country'].replace('Saudia Arabia', 'Saudi Arabia', inplace=True)
 def remap(procfam):
     if procfam in ('Intel EM64T','Intel Nehalem','Intel Westmere','Intel SandyBridge','Intel IvyBridge','Intel Haswell','Intel Core','Intel MIC','AMD x86_64'):
         i,v='x86-64', procfam.split()[0]
@@ -43,11 +40,29 @@ def remap(procfam):
 procfam = df['Processor Family'].where(df['Processor Family'], df['Processor Technology'])
 df[['ISA','Vendor']] = procfam.apply(remap)
 
+# get country codes
+df['Country'].replace('Saudia Arabia', 'Saudi Arabia', inplace=True) # typo in TOP500 sources
+dfc_en = pd.read_csv('country-en.csv')
+dfc_en.columns = ('CountryISO', 'Country')
+df = df.merge(dfc_en, on='Country')
+
+# get localized labels and countries
+loclabels = json.load(open('labels-i18n.json'))
+countries = None
+for lang in loclabels:
+    clang = pd.read_csv('country-%s.csv'%lang, encoding='utf-8')
+    clang.columns = ('CountryISO', lang)
+    if countries is None:
+        countries = clang
+    else:
+        countries = countries.merge(clang, on='CountryISO')
+countries.set_index('CountryISO', inplace=True)
+
 ##########################
 
 # Find what set of countries (sorted by weight) account for most of the total counts
-country_by_date = df.groupby(('Date','Country')).size()
-country_wt = country_by_date.sum(level='Country').order(ascending=False).to_frame('sum')
+country_by_date = df.groupby(('Date','CountryISO')).size()
+country_wt = country_by_date.sum(level='CountryISO').order(ascending=False).to_frame('sum')
 #country_wt['sum'] = country_by_date.sum(level='Country')
 cutoff = country_wt['sum'].cumsum() > 0.90*country_wt['sum'].sum()
 
@@ -59,51 +74,52 @@ major_minor_countries = [ country_by_date.reindex(columns=country_wt.index[cutof
                           for polarity in (False,True) ]
 
 # plot it
-fig = plt.figure(figsize=(14,10))
-sharex = None
-patches, labels = [], []
-dates = country_by_date.index
-for pos, cbd in enumerate(major_minor_countries):
-    plt.subplot(2, 1, pos, sharex=sharex)
-    sharex = ax = fig.gca()
+for lang, langlabels in loclabels.iteritems():
+    fig = plt.figure(figsize=(14,10))
+    sharex = None
+    patches, labels = [], []
+    dates = country_by_date.index
+    for pos, cbd in enumerate(major_minor_countries):
+        plt.subplot(2, 1, pos, sharex=sharex)
+        sharex = ax = fig.gca()
 
-    edge = np.zeros(dates.size)
-    bottom = None
-    for pp, ser in cbd.iteritems():
-        hatch = hatches.next()
-        facecolor = colors.next()
+        edge = np.zeros(dates.size)
+        bottom = None
+        for pp, ser in cbd.iteritems():
+            hatch = hatches.next()
+            facecolor = colors.next()
 
-        if bottom is None:
-            bottom = max(0, ser.min() - 0.1*ser.ptp())
-            edge = bottom
-            ser -= bottom
+            if bottom is None:
+                bottom = max(0, ser.min() - 0.1*ser.ptp())
+                edge, ser = bottom, ser-bottom
+            label = countries.loc[pp,lang]
 
-        ax.fill_between(dates, edge, edge+ser, edgecolor='k', facecolor=facecolor, hatch=hatch, label=pp)
-        ax.xaxis.set_major_formatter(mpld.DateFormatter("’%y"))
-        ax.xaxis.set_major_locator(mpld.YearLocator())
-        ax.xaxis.set_minor_locator(mpld.YearLocator(month=7))
-        plt.xticks(rotation='60')
-        patches.append( plt.Rectangle((0,0), 2, 2, edgecolor='k', facecolor=facecolor, hatch=hatch) )
-        labels.append(pp)
+            ax.fill_between(dates, edge, edge+ser, edgecolor='k', facecolor=facecolor, hatch=hatch, label=label)
+            ax.xaxis.set_major_formatter(mpld.DateFormatter("%Y")) #"’%y"))
+            ax.xaxis.set_major_locator(mpld.YearLocator())
+            ax.xaxis.set_minor_locator(mpld.YearLocator(month=7))
+            plt.xticks(rotation='60')
+            patches.append( plt.Rectangle((0,0), 2, 2, edgecolor='k', facecolor=facecolor, hatch=hatch) )
+            labels.append(label)
 
-        edge += ser
-        pplast = pp
+            edge += ser
+            pplast = pp
 
-    # show legend and labels
-    plt.ylabel("Number of systems")
-    plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
-    if pos==0:
-        plt.xlabel("TOP500 Date")
-    elif pos==1:
-        plt.setp(ax.get_xticklabels(), visible=False)
-        plt.setp(ax.get_xlabel(), visible=False)
-        plt.title("TOP500 Supercomputers by Country")
+        # show legend and labels
+        plt.ylabel(langlabels['nsys'])
+        plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
+        if pos==0:
+            plt.xlabel(langlabels['date'])
+        elif pos==1:
+            plt.setp(ax.get_xticklabels(), visible=False)
+            plt.setp(ax.get_xlabel(), visible=False)
+            plt.title(langlabels['by_country'])
 
-plt.legend(patches, labels, loc='upper left', bbox_to_anchor=(1.02, 1), handleheight=1.2, handlelength=3, ncol=2)
-plt.subplots_adjust(left=.08, top=.92, bottom=0.12, right=0.6, hspace=0.02)
-plt.xlim(dates.min(), dates.max())
-plt.savefig("Countries_with_TOP500_supercomputers.png", bbox_inches='tight')
-plt.savefig("Countries_with_TOP500_supercomputers.svg", bbox_inches='tight')
+    plt.legend(patches, labels, loc='upper left', bbox_to_anchor=(1.02, 1), handleheight=1.2, handlelength=3, ncol=2)
+    plt.subplots_adjust(left=.08, top=.92, bottom=0.12, right=0.6, hspace=0.02)
+    plt.xlim(dates.min(), dates.max())
+    plt.savefig("Countries_with_TOP500_supercomputers_%s.png"%lang, bbox_inches='tight')
+    plt.savefig("Countries_with_TOP500_supercomputers_%s.svg"%lang, bbox_inches='tight')
 
 ##########################
 
@@ -118,46 +134,48 @@ proc_wt.sort([1,0], ascending=(False,False), inplace=True)
 proc_by_date = proc_by_date.reindex(columns=proc_wt.index)
 
 # plot it
-fig = plt.figure(figsize=(14,10))
-patches, labels = [], []
-dates = proc_by_date.index
-edge = np.zeros(dates.size)
+for lang, langlabels in loclabels.iteritems():
+    fig = plt.figure(figsize=(14,10))
+    patches, labels = [], []
+    dates = proc_by_date.index
+    edge = np.zeros(dates.size)
 
-pplast = facecolor = bottom = None
-for pp, ser in proc_by_date.iteritems():
+    pplast = facecolor = bottom = None
+    for pp, ser in proc_by_date.iteritems():
 
-    #print ser.shape, edge.shape, dates.shape
-    if isinstance(pp, basestring): pp=pp,
-    if pplast is None or pp[0]!=pplast[0]:
-        hatch = hatches.next()
-    if pplast is None or len(pp)<2 or pp[1]!=pplast[1]:
-        facecolor = colors.next()
-    label = ("%s (%s)"%pp if pp[0]!=pp[1] else pp[0])
+        #print ser.shape, edge.shape, dates.shape
+        if isinstance(pp, basestring): pp=pp,
+        if pplast is None or pp[0]!=pplast[0]:
+            hatch = hatches.next()
+        if pplast is None or len(pp)<2 or pp[1]!=pplast[1]:
+            facecolor = colors.next()
+        label = ("%s (%s)"%pp if pp[0]!=pp[1] else pp[0])
 
-    ax = fig.gca()
-    ax.fill_between(dates, edge, edge+ser, edgecolor='k', facecolor=facecolor, hatch=hatch, label=label)
-    ax.xaxis.set_major_formatter(mpld.DateFormatter("’%y"))
-    ax.xaxis.set_major_locator(mpld.YearLocator(month=6))
-    ax.xaxis.set_minor_locator(mpld.YearLocator(month=11))
-    plt.xticks(rotation=60)
-    patches.append( plt.Rectangle((0,0), 2, 2, edgecolor='k', facecolor=facecolor, hatch=hatch) )
-    labels.append(label)
+        ax = fig.gca()
+        ax.fill_between(dates, edge, edge+ser, edgecolor='k', facecolor=facecolor, hatch=hatch, label=label)
+        ax.xaxis.set_major_formatter(mpld.DateFormatter("%Y")) #"’%y"))
+        ax.xaxis.set_major_locator(mpld.YearLocator(month=6))
+        ax.xaxis.set_minor_locator(mpld.YearLocator(month=11))
+        plt.xticks(rotation=60)
+        patches.append( plt.Rectangle((0,0), 2, 2, edgecolor='k', facecolor=facecolor, hatch=hatch) )
+        labels.append(label)
 
-    edge += ser
-    pplast = pp
-    if bottom is None:
-        bottom = max(0, edge.min() - 0.1*edge.ptp())
+        edge += ser
+        pplast = pp
+        if bottom is None:
+            bottom = max(0, edge.min() - 0.1*edge.ptp())
 
-# show legend and labels
-plt.legend(patches, labels, loc='upper left', bbox_to_anchor=(1.02, 1), handleheight=1, handlelength=4)
-plt.subplots_adjust(left=.08, top=.92, bottom=0.12, right=0.75)
-plt.xlabel("TOP500 Date")
-plt.ylabel("Number of systems")
-plt.title("TOP500 Supercomputers by Processor Family")
+    # show legend and labels
+    plt.legend(patches, labels, loc='upper left', bbox_to_anchor=(1.02, 1), handleheight=1, handlelength=4)
+    plt.subplots_adjust(left=.08, top=.92, bottom=0.12, right=0.75)
+    plt.xlabel(langlabels['date'])
+    plt.ylabel(langlabels['nsys'])
+    plt.title(langlabels['by_procfam'])
 
-plt.xlim(dates.min(), dates.max())#+pd.datetools.relativedelta(months=6))
-plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
+    plt.xlim(dates.min(), dates.max())#+pd.datetools.relativedelta(months=6))
+    plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
 
-plt.savefig("Processor_families_in_TOP500_supercomputers.png", bbox_inches='tight')
-plt.savefig("Processor_families_in_TOP500_supercomputers.svg", bbox_inches='tight')
+    plt.savefig("Processor_families_in_TOP500_supercomputers_%s.png"%lang, bbox_inches='tight')
+    plt.savefig("Processor_families_in_TOP500_supercomputers_%s.svg"%lang, bbox_inches='tight')
+
 plt.show()
