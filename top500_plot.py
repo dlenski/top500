@@ -178,4 +178,4 @@ for lang, langlabels in loclabels.iteritems():
     plt.savefig("Processor_families_in_TOP500_supercomputers_%s.png"%lang, bbox_inches='tight')
     plt.savefig("Processor_families_in_TOP500_supercomputers_%s.svg"%lang, bbox_inches='tight')
 
-plt.show()
+#plt.show()
