@@ -9,6 +9,7 @@ import numpy as np
 from matplotlib import pyplot as plt, dates as mpld, use
 
 plt.rcParams['font.size']=20
+plt.rcParams['svg.fonttype'] = 'none' # don't embed or render font (https://stackoverflow.com/a/35734729)
 #pl.rcParams['legend.fontsize']*=1.1
 #pl.rcParams['xtick.labelsize']*=1.25
 #pl.rcParams['ytick.labelsize']*=1.25
