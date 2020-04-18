@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 import os
 import textwrap
 #os.environ["HTTP_PROXY"] = 'http://proxy-jf.intel.com:911'
 
 import csv
 import xlrd
-import itertools as it
 from datetime import datetime
 import urllib
 
@@ -14,19 +14,24 @@ now = datetime.now()
 xls_files = []
 url_template = 'http://www.top500.org/lists/{0:04d}/{1:02d}/download/TOP500_{0:04d}{1:02d}.xls'
 
-for year, month in it.takewhile( lambda x:x<=(now.year,now.month), it.izip(it.count(1993),it.cycle((6,11))) ):
-    url = url_template.format(year,month)
-    fn = os.path.basename(url)
+for year in range(1993, now.year+1):
+    for month in (6, 11):
+        if (year, month) > (now.year, now.month):
+            break
+        url = url_template.format(year,month)
+        fn = os.path.basename(url)
 
-    if not os.path.exists(fn):
-        print "Fetching {}...".format(fn)
-        try:
-            urllib.urlretrieve(url, fn)
-            xls_files.append((year,month,fn))
-        except mech.HTTPError as e:
-            print e
+        if os.path.exists(fn):
+            print("{} exists, skipping.".format(fn))
+        else:
+            print("Fetching {}...".format(fn))
+            try:
+                urllib.urlretrieve(url, fn)
+                xls_files.append((year,month,fn))
+            except urllib.error.URLError as e:
+                print(e)
 
-    xls_files.append((year,month,fn))
+        xls_files.append((year,month,fn))
 
 # First pass, figure out all the headers
 all_headers = ['Year', 'Month', 'Day']
@@ -46,13 +51,13 @@ for (year, month, fn) in xls_files:
                 drop_headers = [h for h in last_headers if h not in headers]
 
                 if new_headers or drop_headers or renamed_headers:
-                    print "{}/{}:".format(year,month)
+                    print("{}/{}:".format(year,month))
                     if renamed_headers:
-                        print textwrap.fill("renamed headers: " + ', '.join('%s to %s'%kv for kv in renamed_headers.items()), initial_indent='  ', subsequent_indent='    ')
+                        print(textwrap.fill("renamed headers: " + ', '.join('%s to %s'%kv for kv in renamed_headers.items()), initial_indent='  ', subsequent_indent='    '))
                     if new_headers:
-                        print textwrap.fill("new headers: " + ', '.join(new_headers), initial_indent='  ', subsequent_indent='    ')
+                        print(textwrap.fill("new headers: " + ', '.join(new_headers), initial_indent='  ', subsequent_indent='    '))
                     if drop_headers:
-                        print textwrap.fill("drop headers: " + ', '.join(drop_headers), initial_indent='  ', subsequent_indent='    ')
+                        print(textwrap.fill("drop headers: " + ', '.join(drop_headers), initial_indent='  ', subsequent_indent='    '))
 
                 all_headers.extend(new_headers)
                 last_headers = headers
