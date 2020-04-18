@@ -94,15 +94,12 @@ for lang, langlabels in loclabels.iteritems():
         plt.subplot(2, 1, 2-pos, sharex=sharex)
         sharex = ax = fig.gca()
 
-        edge = np.zeros(dates.size)
+        edge = 0
         bottom = None
         for pp, ser in cbd.iteritems():
             hatch = hatches.next()
             facecolor = colors.next()
 
-            if bottom is None:
-                bottom = max(0, ser.min() - 0.1*ser.ptp())
-                edge, ser = bottom, ser-bottom
             label = countries.loc[pp,lang]
 
             ax.fill_between(dates, edge, edge+ser, edgecolor='k', facecolor=facecolor, hatch=hatch, label=label)
@@ -114,7 +111,6 @@ for lang, langlabels in loclabels.iteritems():
             labels.append(label)
 
             edge += ser
-            pplast = pp
 
         # show legend and labels
         plt.ylabel(langlabels['nsys'])
@@ -153,7 +149,7 @@ for lang, langlabels in loclabels.iteritems():
     fig = plt.figure(figsize=(14,10))
     patches, labels = [], []
     dates = proc_by_date.index
-    edge = np.zeros(dates.size)
+    edge = 0
 
     pplast = facecolor = bottom = None
     for pp, ser in proc_by_date.iteritems():
