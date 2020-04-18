@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python2
 import os
 import textwrap
 #os.environ["HTTP_PROXY"] = 'http://proxy-jf.intel.com:911'
