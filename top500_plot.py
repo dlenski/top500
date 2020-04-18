@@ -22,6 +22,7 @@ hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
 
 # get the data
 df = pd.read_csv('TOP500_history.csv', low_memory=False, parse_dates={'Date': ['Year','Month','Day']})
+assert (df.groupby(('Date',)).size()==500).all()
 
 # Make mostly-coherent processor family and vendor columns
 def remap(procfam):
@@ -51,7 +52,8 @@ for f, t in (('Saudia Arabia', 'Saudi Arabia'),     # typo in TOP500 sources
     df['Country'].replace(f, t, inplace=True)
 dfc_en = pd.read_csv('country-en.csv')
 dfc_en.columns = ('CountryISO', 'Country')
-df = df.merge(dfc_en, on='Country')
+df = df.merge(dfc_en, on='Country', how='left')
+assert (df['CountryISO'].isnull()==False).all()
 
 # get localized labels and countries
 loclabels = json.load(open('labels-i18n.json'))
@@ -64,6 +66,8 @@ for lang in loclabels:
     else:
         countries = countries.merge(clang, on='CountryISO')
 countries.set_index('CountryISO', inplace=True)
+
+assert (df.groupby(('Date',)).size()==500).all()
 
 ##########################
 
