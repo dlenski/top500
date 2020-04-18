@@ -14,11 +14,6 @@ plt.rcParams['font.size']=20
 #pl.rcParams['ytick.labelsize']*=1.25
 plt.rcParams['legend.fontsize']='x-small'
 
-colors = cycle( list('bcgmry') )
-                #+ ['orange', 'pink', 'grey', 'brown', 'lightblue', 'lightgreen', 'turquoise', 'navy', 'purple', 'gold',
-                #   'aqua', 'silver', 'tan', 'tomato', 'steelblue', 'lightcoral', 'chocolate', 'fuchsia', 'indianred'])
-hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
-
 ##########################
 
 # get the data
@@ -87,6 +82,10 @@ major_minor_countries = [ country_by_date.reindex(columns=country_wt.index[cutof
 
 # plot it
 for lang, langlabels in loclabels.iteritems():
+    colors = cycle( list('bcgmry') )
+    hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
+    print("Plotting TOP500 systems by country (%s)..." % lang)
+
     fig = plt.figure(figsize=(14,10))
     sharex = None
     patches, labels = [], []
@@ -147,6 +146,10 @@ proc_by_date = proc_by_date.reindex(columns=proc_wt.index)
 
 # plot it
 for lang, langlabels in loclabels.iteritems():
+    colors = cycle( list('bcgmry') )
+    hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
+    print("Plotting TOP500 systems by process family (%s)..." % lang)
+
     fig = plt.figure(figsize=(14,10))
     patches, labels = [], []
     dates = proc_by_date.index
