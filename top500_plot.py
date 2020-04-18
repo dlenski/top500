@@ -62,7 +62,7 @@ countries.set_index('CountryISO', inplace=True)
 
 # Find what set of countries (sorted by weight) account for most of the total counts
 country_by_date = df.groupby(('Date','CountryISO')).size()
-country_wt = country_by_date.sum(level='CountryISO').order(ascending=False).to_frame('sum')
+country_wt = country_by_date.sum(level='CountryISO').sort_values(ascending=False).to_frame('sum')
 #country_wt['sum'] = country_by_date.sum(level='Country')
 cutoff = country_wt['sum'].cumsum() > 0.90*country_wt['sum'].sum()
 
@@ -80,7 +80,7 @@ for lang, langlabels in loclabels.iteritems():
     patches, labels = [], []
     dates = country_by_date.index
     for pos, cbd in enumerate(major_minor_countries):
-        plt.subplot(2, 1, pos, sharex=sharex)
+        plt.subplot(2, 1, 2-pos, sharex=sharex)
         sharex = ax = fig.gca()
 
         edge = np.zeros(dates.size)
@@ -130,7 +130,7 @@ proc_wt = proc_by_date.sum().to_frame()                   # weight (ISA,Vendor) 
 ISA_wt = proc_wt.sum(level='ISA')                         # weight by (ISA) across all dates
 ISA_wt.columns = [1]
 proc_wt = proc_wt.join( ISA_wt.reindex(proc_wt.index, level='ISA') )
-proc_wt.sort([1,0], ascending=(False,False), inplace=True)
+proc_wt.sort_values([1,0], ascending=(False,False), inplace=True)
 proc_by_date = proc_by_date.reindex(columns=proc_wt.index)
 
 # plot it
