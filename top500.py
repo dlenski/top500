@@ -34,49 +34,57 @@ for year in range(1993, now.year+1):
         xls_files.append((year,month,fn))
 
 # First pass, figure out all the headers
+print("Reconciling headers...")
+
 all_headers = ['Year', 'Month', 'Day']
 last_headers = []
 headers_to_rename = {'Rmax':'RMax', 'Rpeak':'RPeak', 'Effeciency (%)':'Efficiency (%)','Proc. Frequency':'Processor Speed (MHz)','Cores':'Total Cores'}
 
 for (year, month, fn) in xls_files:
     w = xlrd.open_workbook(fn, logfile=open(os.devnull, 'w'))
-    for s in w.sheets():
-        for rr in range(s.nrows):
-            r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
-            if any(r): #skip blank rows
-                renamed_headers = {}
-                headers = [(renamed_headers.setdefault(h, headers_to_rename[h]) if h in headers_to_rename else h)
-                           for h in r]
-                new_headers = [h for h in headers if h not in all_headers]
-                drop_headers = [h for h in last_headers if h not in headers]
+    s = w.sheets()[0]
+    for rr in range(s.nrows):
+        r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
+        if any(r): #skip blank rows
+            renamed_headers = {}
+            headers = [(renamed_headers.setdefault(h, headers_to_rename[h]) if h in headers_to_rename else h)
+                       for h in r]
+            new_headers = [h for h in headers if h not in all_headers]
+            drop_headers = [h for h in last_headers if h not in headers]
 
-                if new_headers or drop_headers or renamed_headers:
-                    print("{}/{}:".format(year,month))
-                    if renamed_headers:
-                        print(textwrap.fill("renamed headers: " + ', '.join('%s to %s'%kv for kv in renamed_headers.items()), initial_indent='  ', subsequent_indent='    '))
-                    if new_headers:
-                        print(textwrap.fill("new headers: " + ', '.join(new_headers), initial_indent='  ', subsequent_indent='    '))
-                    if drop_headers:
-                        print(textwrap.fill("drop headers: " + ', '.join(drop_headers), initial_indent='  ', subsequent_indent='    '))
+            if new_headers or drop_headers or renamed_headers:
+                print("{}/{}:".format(year,month))
+                if renamed_headers:
+                    print(textwrap.fill("renamed headers: " + ', '.join('%s to %s'%kv for kv in renamed_headers.items()), initial_indent='  ', subsequent_indent='    '))
+                if new_headers:
+                    print(textwrap.fill("new headers: " + ', '.join(new_headers), initial_indent='  ', subsequent_indent='    '))
+                if drop_headers:
+                    print(textwrap.fill("drop headers: " + ', '.join(drop_headers), initial_indent='  ', subsequent_indent='    '))
 
-                all_headers.extend(new_headers)
-                last_headers = headers
-                break
+            all_headers.extend(new_headers)
+            last_headers = headers
+            break
+    del w, s
 
 # Second pass, build a complete CSV table
+print("Building complete TOP500_history.csv...")
+
 out = csv.DictWriter(open("TOP500_history.csv", "wb"), all_headers)
 out.writeheader()
 
 for (year,month,fn) in xls_files:
     w = xlrd.open_workbook(fn, logfile=open(os.devnull, 'w'))
-    for s in w.sheets():
-        headers = None
-        for rr in range(s.nrows):
-            r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
-            if any(r): #skip blank lines
-                if headers is None:
-                    headers = [headers_to_rename.get(h,h) for h in r]
-                else:
-                    rd = dict(zip(headers, r))
-                    rd.update({'Year':year, 'Month':month, 'Day':1})
-                    out.writerow(rd)
+    s = w.sheets()[0]
+    headers = None
+    for rr in range(s.nrows):
+        r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
+        if any(r): #skip blank lines
+            if headers is None:
+                headers = [headers_to_rename.get(h,h) for h in r]
+            else:
+                rd = dict(zip(headers, r))
+                rd.update({'Year':year, 'Month':month, 'Day':1})
+                out.writerow(rd)
+    del w, s
+
+print("Done.")
