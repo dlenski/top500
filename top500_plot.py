@@ -25,8 +25,10 @@ df = pd.read_csv('TOP500_history.csv', low_memory=False, parse_dates={'Date': ['
 
 # Make mostly-coherent processor family and vendor columns
 def remap(procfam):
-    if procfam in ('Intel EM64T','Intel Nehalem','Intel Westmere','Intel SandyBridge','Intel IvyBridge','Intel Haswell','Intel Core','Intel MIC','AMD x86_64'):
+    if procfam in ('Intel EM64T','Intel Nehalem','Intel Westmere','Intel SandyBridge','Intel IvyBridge','Intel Haswell','Intel Core','Intel Broadwell','Intel Skylake','Intel Cascade Lake','Intel Cascade lake','AMD x86_64','AMD Zen (Naples)','AMD Zen-2 (Rome)'):
         i,v='x86-64', procfam.split()[0]
+    elif procfam in ('Intel MIC','Intel Xeon Phi'):
+        i,v='Xeon Phi','Intel'
     elif procfam in ('POWER','Power','PowerPC'):
         i=v='POWER'
     elif procfam == 'Intel IA-64':
@@ -41,7 +43,12 @@ procfam = df['Processor Family'].where(df['Processor Family'], df['Processor Tec
 df[['ISA','Vendor']] = procfam.apply(remap)
 
 # get country codes
-df['Country'].replace('Saudia Arabia', 'Saudi Arabia', inplace=True) # typo in TOP500 sources
+for f, t in (('Saudia Arabia', 'Saudi Arabia'),     # typo in TOP500 sources
+             ('Korea, South', 'South Korea'),       # Match country-en.csv
+             ('Czech Republic', 'Czechia'),         # Match country-en.csv
+             ('Slovak Republic', 'Slovakia'),       # Match country-en.csv
+             ('Hong Kong', 'Hong Kong SAR China')): # Match country-en.csv
+    df['Country'].replace(f, t, inplace=True)
 dfc_en = pd.read_csv('country-en.csv')
 dfc_en.columns = ('CountryISO', 'Country')
 df = df.merge(dfc_en, on='Country')
