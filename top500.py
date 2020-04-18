@@ -7,9 +7,7 @@ import csv
 import xlrd
 import itertools as it
 from datetime import datetime
-import mechanize as mech, ConfigParser
-
-br = mech.Browser()
+import urllib
 
 # Download all the XLS files that we don't already have
 now = datetime.now()
@@ -23,7 +21,7 @@ for year, month in it.takewhile( lambda x:x<=(now.year,now.month), it.izip(it.co
     if not os.path.exists(fn):
         print "Fetching {}...".format(fn)
         try:
-            br.retrieve(url, fn)
+            urllib.urlretrieve(url, fn)
             xls_files.append((year,month,fn))
         except mech.HTTPError as e:
             print e
