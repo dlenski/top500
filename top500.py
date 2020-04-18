@@ -9,18 +9,7 @@ import itertools as it
 from datetime import datetime
 import mechanize as mech, ConfigParser
 
-# Login is now required...
-cp = ConfigParser.ConfigParser()
-cp.read(os.path.expanduser('./top500.ini'))
-
 br = mech.Browser()
-br.open('http://top500.org/accounts/login')
-br.form = [f for f in br.forms() if 'login' in f.action][0]
-br['username'] = cp.get('DEFAULT', 'username')
-br['password'] = cp.get('DEFAULT', 'password')
-br.submit()
-if 'login' in br.geturl():
-    raise RuntimeError('login failed')
 
 # Download all the XLS files that we don't already have
 now = datetime.now()
