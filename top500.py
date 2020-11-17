@@ -2,23 +2,37 @@
 from __future__ import print_function
 import os
 import textwrap
-#os.environ["HTTP_PROXY"] = 'http://proxy-jf.intel.com:911'
 
 import csv
 import xlrd
 from datetime import datetime
-import urllib
+import mechanize as mech, ConfigParser
+
+# Login is now required...
+print("Logging into top500.org ...")
+cp = ConfigParser.ConfigParser()
+cp.read(os.path.expanduser('./top500.ini'))
+br = mech.Browser()
+br.open('https://www.top500.org/accounts/login?next=/')
+br.form = [f for f in br.forms() if 'login' in f.action][0]
+br['login'] = cp.get('DEFAULT', 'username')
+br['password'] = cp.get('DEFAULT', 'password')
+br.submit()
+if 'login' in br.geturl():
+    raise RuntimeError('login failed')
+print("Success.")
 
 # Download all the XLS files that we don't already have
 now = datetime.now()
 xls_files = []
-url_template = 'http://www.top500.org/lists/{0:04d}/{1:02d}/download/TOP500_{0:04d}{1:02d}.xls'
+url_template = 'https://www.top500.org/lists/top500/{0:04d}/{1:02d}/download/TOP500_{0:04d}{1:02d}.{2:s}'
 
 for year in range(1993, now.year+1):
     for month in (6, 11):
         if (year, month) > (now.year, now.month):
             break
-        url = url_template.format(year,month)
+        ext = 'xlsx' if year >= 2020 else 'xls'
+        url = url_template.format(year,month,ext)
         fn = os.path.basename(url)
 
         if os.path.exists(fn):
@@ -26,9 +40,9 @@ for year in range(1993, now.year+1):
         else:
             print("Fetching {}...".format(fn))
             try:
-                urllib.urlretrieve(url, fn)
+                br.retrieve(url, fn)
                 xls_files.append((year,month,fn))
-            except urllib.error.URLError as e:
+            except mech.HTTPError as e:
                 print(e)
 
         xls_files.append((year,month,fn))

@@ -1,3 +1,4 @@
 xlrd>=0.9
 matplotlib>=1.5.1
 pandas>=0.17
+mechanize>=0.3.7
