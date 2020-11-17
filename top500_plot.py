@@ -1,6 +1,5 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 
 import sys, json
 from itertools import cycle, product
@@ -37,7 +36,7 @@ def remap(procfam):
         i,v=procfam, procfam
     return pd.Series((i,v))
 
-procfam = df['Processor Family'].where(df['Processor Family'], df['Processor Technology'])
+procfam = df['Processor Family'].where(df['Processor Family'].notna(), df['Processor Technology'])
 df[['ISA','Vendor']] = procfam.apply(remap)
 
 # get country codes
@@ -82,7 +81,7 @@ major_minor_countries = [ country_by_date.reindex(columns=country_wt.index[cutof
                           for polarity in (False,True) ]
 
 # plot it
-for lang, langlabels in loclabels.iteritems():
+for lang, langlabels in loclabels.items():
     colors = cycle( list('bcgmry') )
     hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
     print("Plotting TOP500 systems by country (%s)..." % lang)
@@ -97,9 +96,9 @@ for lang, langlabels in loclabels.iteritems():
 
         edge = 0
         bottom = None
-        for pp, ser in cbd.iteritems():
-            hatch = hatches.next()
-            facecolor = colors.next()
+        for pp, ser in cbd.items():
+            hatch = next(hatches)
+            facecolor = next(colors)
 
             label = countries.loc[pp,lang]
 
@@ -142,7 +141,7 @@ proc_wt.sort_values([1,0], ascending=(False,False), inplace=True)
 proc_by_date = proc_by_date.reindex(columns=proc_wt.index)
 
 # plot it
-for lang, langlabels in loclabels.iteritems():
+for lang, langlabels in loclabels.items():
     colors = cycle( list('bcgmry') )
     hatches = cycle(('/', '*', '\\', 'o', 'x', 'O', '.'))
     print("Plotting TOP500 systems by process family (%s)..." % lang)
@@ -153,14 +152,14 @@ for lang, langlabels in loclabels.iteritems():
     edge = 0
 
     pplast = facecolor = bottom = None
-    for pp, ser in proc_by_date.iteritems():
+    for pp, ser in proc_by_date.items():
 
         #print ser.shape, edge.shape, dates.shape
-        if isinstance(pp, basestring): pp=pp,
+        if isinstance(pp, str): pp=pp,
         if pplast is None or pp[0]!=pplast[0]:
-            hatch = hatches.next()
+            hatch = next(hatches)
         if pplast is None or len(pp)<2 or pp[1]!=pplast[1]:
-            facecolor = colors.next()
+            facecolor = next(colors)
         label = ("%s (%s)"%pp if pp[0]!=pp[1] else pp[0])
 
         ax = fig.gca()

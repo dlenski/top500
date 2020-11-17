@@ -1,16 +1,15 @@
-#!/usr/bin/env python2
-from __future__ import print_function
+#!/usr/bin/env python3
 import os
 import textwrap
 
 import csv
 import xlrd
 from datetime import datetime
-import mechanize as mech, ConfigParser
+import mechanize as mech, configparser
 
 # Login is now required...
 print("Logging into top500.org ...")
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(os.path.expanduser('./top500.ini'))
 br = mech.Browser()
 br.open('https://www.top500.org/accounts/login?next=/')
@@ -57,7 +56,7 @@ for (year, month, fn) in xls_files:
     w = xlrd.open_workbook(fn, logfile=open(os.devnull, 'w'))
     s = w.sheets()[0]
     for rr in range(s.nrows):
-        r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
+        r = s.row_values(rr)
         if any(r): #skip blank rows
             renamed_headers = {}
             headers = [(renamed_headers.setdefault(h, headers_to_rename[h]) if h in headers_to_rename else h)
@@ -82,7 +81,7 @@ for (year, month, fn) in xls_files:
 # Second pass, build a complete CSV table
 print("Building complete TOP500_history.csv...")
 
-out = csv.DictWriter(open("TOP500_history.csv", "wb"), all_headers)
+out = csv.DictWriter(open("TOP500_history.csv", "w"), all_headers)
 out.writeheader()
 
 for (year,month,fn) in xls_files:
@@ -90,7 +89,7 @@ for (year,month,fn) in xls_files:
     s = w.sheets()[0]
     headers = None
     for rr in range(s.nrows):
-        r = [unicode(x).encode('ascii','xmlcharrefreplace') for x in s.row_values(rr)]
+        r = s.row_values(rr)
         if any(r): #skip blank lines
             if headers is None:
                 headers = [headers_to_rename.get(h,h) for h in r]
