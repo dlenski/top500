@@ -37,6 +37,7 @@ for year in range(1993, now.year+1):
 
         if os.path.exists(fn):
             print("{} exists, skipping.".format(fn))
+            xls_files.append((year,month,fn))
         else:
             print("Fetching {}...".format(fn))
             try:
@@ -44,8 +45,6 @@ for year in range(1993, now.year+1):
                 xls_files.append((year,month,fn))
             except mech.HTTPError as e:
                 print(e)
-
-        xls_files.append((year,month,fn))
 
 # First pass, figure out all the headers
 print("Reconciling headers...")
