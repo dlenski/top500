@@ -50,7 +50,14 @@ print("Reconciling headers...")
 
 all_headers = ['Year', 'Month', 'Day']
 last_headers = []
-headers_to_rename = {'Rmax':'RMax', 'Rpeak':'RPeak', 'Effeciency (%)':'Efficiency (%)','Proc. Frequency':'Processor Speed (MHz)','Cores':'Total Cores'}
+headers_to_rename = {  # typos and inconsistencies in header names
+    'Rmax': 'RMax',
+    'Rpeak': 'RPeak',
+    'Effeciency (%)': 'Efficiency (%)',
+    'Proc. Frequency': 'Processor Speed (MHz)',
+    'Cores': 'Total Cores',
+    'Power Effeciency [GFlops/Watts]': 'Power Efficiency [GFlops/Watts]',
+}
 
 for (year, month, fn) in xls_files:
     w = xlrd.open_workbook(fn, logfile=open(os.devnull, 'w'))
