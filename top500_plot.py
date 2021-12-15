@@ -22,7 +22,7 @@ assert (df.groupby(('Date')).size()==500).all()
 
 # Make mostly-coherent processor family and vendor columns
 def remap(procfam):
-    if procfam in ('Intel EM64T','Intel Nehalem','Intel Westmere','Intel SandyBridge','Intel IvyBridge','Intel Haswell','Intel Core','Intel Broadwell','Intel Skylake','Intel Cascade Lake','Intel Cascade lake','AMD x86_64','AMD Zen (Naples)','AMD Zen-2 (Rome)','AMD Zen-3 (Milan)'):
+    if procfam in ('Intel EM64T','Intel Nehalem','Intel Westmere','Intel SandyBridge','Intel IvyBridge','Intel Haswell','Intel Core','Intel Broadwell','Intel Skylake','Intel Cascade Lake','Intel Cascade lake','Intel Ice Lake','AMD x86_64','AMD Zen (Naples)','AMD Zen-2 (Rome)','AMD Zen-3 (Milan)'):
         i,v='x86-64', procfam.split()[0]
     elif procfam in ('Intel MIC','Intel Xeon Phi'):
         i,v='Xeon Phi','Intel'
