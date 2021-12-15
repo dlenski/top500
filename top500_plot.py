@@ -18,7 +18,7 @@ plt.rcParams['legend.fontsize']='x-small'
 
 # get the data
 df = pd.read_csv('TOP500_history.csv', low_memory=False, parse_dates={'Date': ['Year','Month','Day']})
-assert (df.groupby(('Date',)).size()==500).all()
+assert (df.groupby(('Date')).size()==500).all()
 
 # Make mostly-coherent processor family and vendor columns
 def remap(procfam):
@@ -63,12 +63,12 @@ for lang in loclabels:
         countries = countries.merge(clang, on='CountryISO')
 countries.set_index('CountryISO', inplace=True)
 
-assert (df.groupby(('Date',)).size()==500).all()
+assert (df.groupby(('Date')).size()==500).all()
 
 ##########################
 
 # Find what set of countries (sorted by weight) account for most of the total counts
-country_by_date = df.groupby(('Date','CountryISO')).size()
+country_by_date = df.groupby(['Date','CountryISO']).size()
 country_wt = country_by_date.sum(level='CountryISO').sort_values(ascending=False).to_frame('sum')
 #country_wt['sum'] = country_by_date.sum(level='Country')
 cutoff = country_wt['sum'].cumsum() > 0.90*country_wt['sum'].sum()
@@ -114,7 +114,7 @@ for lang, langlabels in loclabels.items():
 
         # show legend and labels
         plt.ylabel(langlabels['nsys'])
-        plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
+        plt.ylim(bottom, min(500, edge.max() + 0.1*np.ptp(edge)))
         if pos==0:
             plt.xlabel(langlabels['date'])
         elif pos==1:
@@ -131,7 +131,7 @@ for lang, langlabels in loclabels.items():
 ##########################
 
 # Processor families by date, sorted by weight of ISA then by Vendor
-proc_counts = df.groupby(('ISA','Vendor','Date')).size()
+proc_counts = df.groupby(['ISA','Vendor','Date']).size()
 proc_by_date = proc_counts.unstack(level=(0,1)).fillna(0) # pivot ISA,Vendor from row to column index
 proc_wt = proc_by_date.sum().to_frame()                   # weight (ISA,Vendor) across all dates
 ISA_wt = proc_wt.sum(level='ISA')                         # weight by (ISA) across all dates
@@ -174,7 +174,7 @@ for lang, langlabels in loclabels.items():
         edge += ser
         pplast = pp
         if bottom is None:
-            bottom = max(0, edge.min() - 0.1*edge.ptp())
+            bottom = max(0, edge.min() - 0.1*np.ptp(edge))
 
     # show legend and labels
     plt.legend(patches, labels, loc='upper left', bbox_to_anchor=(1.02, 1), handleheight=1, handlelength=4)
@@ -184,7 +184,7 @@ for lang, langlabels in loclabels.items():
     plt.title(langlabels['by_procfam'])
 
     plt.xlim(dates.min(), dates.max())#+pd.datetools.relativedelta(months=6))
-    plt.ylim(bottom, min(500, edge.max() + 0.1*edge.ptp()))
+    plt.ylim(bottom, min(500, edge.max() + 0.1*np.ptp(edge)))
 
     plt.savefig("Processor_families_in_TOP500_supercomputers_%s.png"%lang, bbox_inches='tight')
     plt.savefig("Processor_families_in_TOP500_supercomputers_%s.svg"%lang, bbox_inches='tight')
