@@ -32,6 +32,9 @@ def remap(procfam):
         i,v='Itanium', 'Intel'
     elif procfam in ('Intel IA-32','AMD'):
         i,v='x86-32', procfam.split()[0]
+    elif procfam == 'X86_64':
+        # AMD/Chinese "Hygon Dhyana" system which appears in 2020/11 is mis-classified
+        i,v='x86-64', "AMD"
     else:
         i,v=procfam, procfam
     return pd.Series((i,v))
