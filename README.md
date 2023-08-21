@@ -33,6 +33,15 @@ $ ./top500.py               # Download and combine latest biannual spreadsheets 
 $ ./top500_plot.py          # Create PNG- and SVG-format plots using TOP500_history.csv
 ```
 
+# With Nix
+
+This repository provides a [Nix](https://nixos.org) environment. You can run the scripts as:
+
+```
+$ nix develop --command python3 top500.py
+$ nix develop --command python3 top500_plot.py
+```
+
 # License
 
 GPLv3 or later
